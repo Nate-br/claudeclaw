@@ -1455,15 +1455,18 @@ async function registerBotCommands(token: string): Promise<void> {
   try {
     const skills = await listSkills();
     const commands = [
-      { command: "start", description: "Show welcome message" },
-      { command: "reset", description: "Reset session and start fresh" },
-      { command: "compact", description: "Compact session to reduce context size" },
-      { command: "status", description: "Show current session status" },
-      { command: "context", description: "Show context window usage" },
-      { command: "kill", description: "Kill the currently running agent" },
-      { command: "verbose", description: "Toggle tool call display in responses" },
-      { command: "fast", description: "Toggle fast mode (uses Haiku for speed)" },
-      { command: "fork", description: "Run a parallel lightweight agent without blocking" },
+      // Session management
+      { command: "start", description: "👋 Welcome message" },
+      { command: "status", description: "📊 Session info and stats" },
+      { command: "context", description: "📐 Context window usage" },
+      { command: "reset", description: "🔄 Start fresh session" },
+      { command: "compact", description: "🗜️ Reduce context size" },
+      // Mode toggles
+      { command: "fast", description: "⚡ Toggle Haiku (speed mode)" },
+      { command: "verbose", description: "🔧 Toggle tool call display" },
+      // Control
+      { command: "fork", description: "🍴 Run parallel task" },
+      { command: "kill", description: "⛔ Stop current agent" },
     ];
     for (const skill of skills) {
       // Telegram commands: 1-32 chars, lowercase a-z, 0-9, underscores only
