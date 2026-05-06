@@ -367,6 +367,10 @@ async function sendDocumentToChat(
 // Chat IDs with verbose tool display enabled
 const verboseChats = new Set<number>();
 
+// Chat IDs with fast mode enabled (uses Haiku for speed)
+const fastChats = new Set<number>();
+const FAST_MODEL = "claude-haiku-4-5-20251001";
+
 /**
  * Build a streaming callback using editMessageText.
  * On first chunk: send a placeholder message to get message_id.
@@ -1026,6 +1030,17 @@ async function handleMessage(message: TelegramMessage): Promise<void> {
     return;
   }
 
+  if (command === "/fast") {
+    if (fastChats.has(chatId)) {
+      fastChats.delete(chatId);
+      await sendMessage(config.token, chatId, "Fast mode off — using your configured model.", threadId);
+    } else {
+      fastChats.add(chatId);
+      await sendMessage(config.token, chatId, "Fast mode on — using Haiku for speed. Responses will be quicker but less thorough.", threadId);
+    }
+    return;
+  }
+
   if (command === "/fork") {
     const forkPrompt = text.replace(/^\/fork\s*/i, "").trim();
     if (!forkPrompt) {
@@ -1202,6 +1217,8 @@ async function handleMessage(message: TelegramMessage): Promise<void> {
     const prefixedPrompt = promptParts.join("\n");
     const busy = isMainBusy();
     const verbose = verboseChats.has(chatId);
+    const fast = fastChats.has(chatId);
+    const modelOverride = fast ? FAST_MODEL : undefined;
     let result;
     let streamMsgId: number | null = null;
     let hadToolLines = false;
@@ -1210,7 +1227,7 @@ async function handleMessage(message: TelegramMessage): Promise<void> {
       return;
     } else {
       const stream = makeStreamCallback(config.token, chatId, threadId, { verbose });
-      result = await runUserMessage("telegram", prefixedPrompt, sessionKey, undefined, stream.onChunk, stream.onToolEvent);
+      result = await runUserMessage("telegram", prefixedPrompt, sessionKey, undefined, stream.onChunk, stream.onToolEvent, modelOverride);
       const streamResult = await stream.waitForStreamMsg();
       streamMsgId = streamResult.msgId;
       hadToolLines = streamResult.hadToolLines;
@@ -1445,6 +1462,7 @@ async function registerBotCommands(token: string): Promise<void> {
       { command: "context", description: "Show context window usage" },
       { command: "kill", description: "Kill the currently running agent" },
       { command: "verbose", description: "Toggle tool call display in responses" },
+      { command: "fast", description: "Toggle fast mode (uses Haiku for speed)" },
       { command: "fork", description: "Run a parallel lightweight agent without blocking" },
     ];
     for (const skill of skills) {
