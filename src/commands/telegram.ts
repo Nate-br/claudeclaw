@@ -1041,6 +1041,29 @@ async function handleMessage(message: TelegramMessage): Promise<void> {
     return;
   }
 
+  if (command === "/model") {
+    const settings = getSettings();
+    const configuredModel = settings.model || "not configured";
+    const isFast = fastChats.has(chatId);
+    const currentModel = isFast ? FAST_MODEL : configuredModel;
+
+    const response = [
+      `**Current model:** ${currentModel}`,
+      isFast ? "_(fast mode active)_" : "",
+      "",
+      "**Available models:**",
+      "• claude-opus-4-7 (most capable)",
+      "• claude-sonnet-4-6 (balanced)",
+      "• claude-haiku-4-5-20251001 (fastest)",
+      "",
+      "Use `/fast` to toggle speed mode (Haiku).",
+      "To change your default model, edit settings.json."
+    ].filter(Boolean).join("\n");
+
+    await sendMessage(config.token, chatId, response, threadId);
+    return;
+  }
+
   if (command === "/fork") {
     const forkPrompt = text.replace(/^\/fork\s*/i, "").trim();
     if (!forkPrompt) {
@@ -1462,6 +1485,7 @@ async function registerBotCommands(token: string): Promise<void> {
       { command: "reset", description: "🔄 Start fresh session" },
       { command: "compact", description: "🗜️ Reduce context size" },
       // Mode toggles
+      { command: "model", description: "🤖 Show current model" },
       { command: "fast", description: "⚡ Toggle Haiku (speed mode)" },
       { command: "verbose", description: "🔧 Toggle tool call display" },
       // Control
